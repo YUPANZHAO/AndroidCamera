@@ -1,4 +1,4 @@
-package com.example.androidcamera;
+package com.androidcamera;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btn_closeCamera;
     private boolean is_camera_open;
 
+    private FrameChannel frameChannel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +45,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_openCamera.setOnClickListener(this);
         btn_closeCamera = findViewById(R.id.main_btn_closeCamera);
         btn_closeCamera.setOnClickListener(this);
+        // frameChannel
+        frameChannel = new FrameChannel();
     }
 
     @Override
@@ -103,11 +107,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
 
+        //注册编码器
+        frameChannel.init(width, height, ImageFormat.NV21, fps, bitrate);
+
         //设置监听获取视频流的每一帧
         camera.setPreviewCallback(new Camera.PreviewCallback() {
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
-
+                frameChannel.receive(data);
             }
         });
         //调用startPreview()用以更新preview的surface
@@ -136,6 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             camera.setPreviewCallback(null);
             camera.stopPreview();
             camera.release();
+            frameChannel.release();
         }
     }
 

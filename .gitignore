@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+/app/src/main/libs
+/app/src/main/obj
+/app/src/main/jni/.vscode

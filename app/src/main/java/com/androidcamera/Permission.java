@@ -1,4 +1,4 @@
-package com.example.androidcamera;
+package com.androidcamera;
 
 import android.Manifest;
 import android.app.Activity;
