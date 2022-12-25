@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,8 +7,38 @@
     tools:context=".MainActivity">
 
     <SurfaceView
-        android:id="@+id/sfv"
+        android:id="@+id/main_sfv"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/main_layout_ctl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20px">
+
+        <Button
+            android:id="@+id/main_btn_openCamera"
+            android:layout_width="0px"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="open camera"
+            android:layout_marginLeft="20px"
+            android:layout_marginRight="10px"
+            />
+
+        <Button
+            android:id="@+id/main_btn_closeCamera"
+            android:layout_width="0px"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="close camera"
+            android:layout_marginLeft="10px"
+            android:layout_marginRight="20px"
+            />
+
+    </LinearLayout>
+
+</RelativeLayout>
