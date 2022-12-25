@@ -6,39 +6,75 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <SurfaceView
-        android:id="@+id/main_sfv"
+    <!-- 监控播放界面 -->
+    <RelativeLayout
+        android:id="@+id/main_layout_surveillance"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="invisible">
 
-    <LinearLayout
-        android:id="@+id/main_layout_ctl"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="20px">
-
-        <Button
-            android:id="@+id/main_btn_openCamera"
-            android:layout_width="0px"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="open camera"
-            android:layout_marginLeft="20px"
-            android:layout_marginRight="10px"
+        <SurfaceView
+            android:id="@+id/main_sfv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             />
 
-        <Button
+        <!-- 关闭摄像头 -->
+        <ImageButton
             android:id="@+id/main_btn_closeCamera"
-            android:layout_width="0px"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="close camera"
-            android:layout_marginLeft="10px"
-            android:layout_marginRight="20px"
+            android:layout_width="200px"
+            android:layout_height="200px"
+            android:layout_centerInParent="true"
+            android:src="@drawable/close_camera"
+            android:background="@color/transparent"
             />
 
-    </LinearLayout>
+    </RelativeLayout>
+
+    <!-- 按钮组 -->
+    <RelativeLayout
+        android:id="@+id/main_layout_btn_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
+
+        <!-- 开启摄像头 -->
+        <RelativeLayout
+            android:id="@+id/main_layout_openCamera"
+            android:layout_width="240px"
+            android:layout_height="240px"
+            android:elevation="10px"
+            android:background="@drawable/shape"
+            android:layout_margin="50px">
+            <ImageButton
+                android:id="@+id/main_btn_openCamera"
+                android:layout_width="200px"
+                android:layout_height="200px"
+                android:layout_centerInParent="true"
+                android:src="@drawable/camera"
+                android:background="@color/transparent"
+                />
+        </RelativeLayout>
+
+        <!-- 跳转设置 -->
+        <RelativeLayout
+            android:id="@+id/main_layout_setting"
+            android:layout_width="240px"
+            android:layout_height="240px"
+            android:elevation="10px"
+            android:background="@drawable/shape"
+            android:layout_margin="50px"
+            android:layout_below="@id/main_layout_openCamera">
+            <ImageButton
+                android:id="@+id/main_btn_setting"
+                android:layout_width="200px"
+                android:layout_height="200px"
+                android:layout_centerInParent="true"
+                android:src="@drawable/setting"
+                android:background="@color/transparent"
+                />
+        </RelativeLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>

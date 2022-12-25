@@ -1,6 +1,7 @@
 package com.androidcamera;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.pm.PackageManager;
@@ -12,6 +13,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,11 +24,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private SurfaceHolder surfaceHolder;
     private Camera camera;
 
-    private Button btn_openCamera;
-    private Button btn_closeCamera;
-    private boolean is_camera_open;
+    private ImageButton btn_openCamera;
+    private ImageButton btn_closeCamera;
+    private ImageButton btn_setting;
 
     private FrameChannel frameChannel;
+
+    private RelativeLayout layout_btn_group;
+    private RelativeLayout layout_surveillance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,15 +42,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void init() {
+        //去除默认标题栏
+        ActionBar actionBar=getSupportActionBar();
+        if(actionBar!=null){
+            actionBar.hide();
+        }
         // Surface
         SurfaceView surfaceView = findViewById(R.id.main_sfv);
         surfaceHolder = surfaceView.getHolder();
         // Btn Open Close
-        is_camera_open = false;
         btn_openCamera = findViewById(R.id.main_btn_openCamera);
         btn_openCamera.setOnClickListener(this);
         btn_closeCamera = findViewById(R.id.main_btn_closeCamera);
         btn_closeCamera.setOnClickListener(this);
+        // layout
+        layout_btn_group = findViewById(R.id.main_layout_btn_group);
+        layout_surveillance = findViewById(R.id.main_layout_surveillance);
         // frameChannel
         frameChannel = new FrameChannel();
     }
@@ -151,16 +164,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.main_btn_openCamera:
-                if(is_camera_open == false) {
-                    openCamera();
-                    is_camera_open = true;
-                }
+                openCamera();
+                layout_btn_group.setVisibility(View.GONE);
+                layout_surveillance.setVisibility(View.VISIBLE);
                 break;
             case R.id.main_btn_closeCamera:
-                if(is_camera_open == true) {
-                    releaseCamera(camera);
-                    is_camera_open = false;
-                }
+                releaseCamera(camera);
+                layout_btn_group.setVisibility(View.VISIBLE);
+                layout_surveillance.setVisibility(View.GONE);
                 break;
             default:
                 break;
