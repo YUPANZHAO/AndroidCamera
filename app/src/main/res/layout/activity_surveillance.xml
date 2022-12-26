@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".SurveillanceActivity"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:background="@color/black">
 
     <SurfaceView
         android:id="@+id/surveillance_sfv"
@@ -38,6 +39,7 @@
             android:layout_height="wrap_content"
             android:text="VIDEO INFO"
             android:textSize="40px"
+            android:textColor="@color/green"
             android:scrollbars="horizontal"
             android:layout_margin="30px" />
     </RelativeLayout>

@@ -8,11 +8,13 @@ import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -20,6 +22,7 @@ import java.util.List;
 
 public class SurveillanceActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private SurfaceView surfaceView;
     private SurfaceHolder surfaceHolder;
     private Camera camera;
     private ImageButton btn_closeCamera;
@@ -62,7 +65,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
             actionBar.hide();
         }
         // Surface
-        SurfaceView surfaceView = findViewById(R.id.surveillance_sfv);
+        surfaceView = findViewById(R.id.surveillance_sfv);
         surfaceHolder = surfaceView.getHolder();
         // Btn Close
         btn_closeCamera = findViewById(R.id.surveillance_btn_closeCamera);
@@ -100,6 +103,18 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        //自动对焦
+        camera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                camera.cancelAutoFocus();
+            }
+        });
+        return super.onTouchEvent(event);
+    }
+
     private void openCamera() {
         camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
         //获取相机参数
@@ -121,6 +136,8 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         parameters.setPreviewFpsRange(fps * 1000, fps * 1000);
         //相机旋转90度
 //        camera.setDisplayOrientation(90);
+        //自动对焦
+//        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         //配置camera参数
         camera.setParameters(parameters);
         try {
@@ -129,7 +146,22 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
             e.printStackTrace();
         }
 
-        //注册编码器
+        // 按16:9的比例显示画面
+        surfaceView.post(new Runnable() {
+            @Override
+            public void run() {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) surfaceView.getLayoutParams();
+                int screen_height = surfaceView.getMeasuredHeight();
+                int new_width =  screen_height * 16 / 9;
+                int new_height = screen_height;
+                lp.width = new_width;
+                lp.height = new_height;
+                lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                surfaceView.setLayoutParams(lp);
+            }
+        });
+
+        // 注册编码器
         frameChannel.init(width, height, ImageFormat.NV21, fps, bitrate, rtmpPushUrl);
 
         //设置监听获取视频流的每一帧
