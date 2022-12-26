@@ -4,9 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
+import android.location.SettingInjectorService;
+import android.net.IpSecManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -14,24 +17,21 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import java.io.IOException;
+import java.sql.Time;
 import java.util.List;
+import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private SurfaceHolder surfaceHolder;
-    private Camera camera;
-
     private ImageButton btn_openCamera;
-    private ImageButton btn_closeCamera;
     private ImageButton btn_setting;
 
-    private FrameChannel frameChannel;
-
-    private RelativeLayout layout_btn_group;
-    private RelativeLayout layout_surveillance;
+    private Intent intent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,24 +42,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void init() {
-        //去除默认标题栏
+        // 去除默认标题栏
         ActionBar actionBar=getSupportActionBar();
         if(actionBar!=null){
             actionBar.hide();
         }
-        // Surface
-        SurfaceView surfaceView = findViewById(R.id.main_sfv);
-        surfaceHolder = surfaceView.getHolder();
-        // Btn Open Close
+        // Btn Open Setting
         btn_openCamera = findViewById(R.id.main_btn_openCamera);
         btn_openCamera.setOnClickListener(this);
-        btn_closeCamera = findViewById(R.id.main_btn_closeCamera);
-        btn_closeCamera.setOnClickListener(this);
-        // layout
-        layout_btn_group = findViewById(R.id.main_layout_btn_group);
-        layout_surveillance = findViewById(R.id.main_layout_surveillance);
-        // frameChannel
-        frameChannel = new FrameChannel();
+        btn_setting = findViewById(R.id.main_btn_setting);
+        btn_setting.setOnClickListener(this);
     }
 
     @Override
@@ -92,89 +84,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void openCamera() {
-        camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
-        //获取相机参数
-        Camera.Parameters parameters = camera.getParameters();
-        //获取相机支持的预览的大小
-        Camera.Size previewSize = getCameraPreviewSize(parameters);
-//        int width = previewSize.width;
-//        int height = previewSize.height;
-        int width = 640;
-        int height = 360;
-        int fps = 15;
-        int bitrate = 1000000;
-        //设置预览格式（也就是每一帧的视频格式）YUV420下的NV21
-        parameters.setPreviewFormat(ImageFormat.NV21);
-        //设置预览图像分辨率
-        parameters.setPreviewSize(width, height);
-        //设置帧率
-        parameters.setPreviewFpsRange(fps * 1000, fps * 1000);
-        //相机旋转90度
-        camera.setDisplayOrientation(90);
-        //配置camera参数
-        camera.setParameters(parameters);
-        try {
-            camera.setPreviewDisplay(surfaceHolder);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //注册编码器
-        frameChannel.init(width, height, ImageFormat.NV21, fps, bitrate);
-
-        //设置监听获取视频流的每一帧
-        camera.setPreviewCallback(new Camera.PreviewCallback() {
-            @Override
-            public void onPreviewFrame(byte[] data, Camera camera) {
-                frameChannel.receive(data);
-            }
-        });
-        //调用startPreview()用以更新preview的surface
-        camera.startPreview();
-    }
-
-    private Camera.Size getCameraPreviewSize(Camera.Parameters parameters) {
-        List<Camera.Size> list = parameters.getSupportedPreviewSizes();
-        Camera.Size needSize = null;
-        for (Camera.Size size : list) {
-            if (needSize == null) {
-                needSize = size;
-                continue;
-            }
-            if (size.width >= needSize.width) {
-                if (size.height > needSize.height) {
-                    needSize = size;
-                }
-            }
-        }
-        return needSize;
-    }
-
-    public void releaseCamera(Camera camera) {
-        if (camera != null) {
-            camera.setPreviewCallback(null);
-            camera.stopPreview();
-            camera.release();
-            frameChannel.release();
-        }
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.main_btn_openCamera:
-                openCamera();
-                layout_btn_group.setVisibility(View.GONE);
-                layout_surveillance.setVisibility(View.VISIBLE);
+                intent=new Intent(MainActivity.this, SurveillanceActivity.class);
+                startActivity(intent);
                 break;
-            case R.id.main_btn_closeCamera:
-                releaseCamera(camera);
-                layout_btn_group.setVisibility(View.VISIBLE);
-                layout_surveillance.setVisibility(View.GONE);
+            case R.id.main_btn_setting:
+                intent=new Intent(MainActivity.this, SettingActivity.class);
+                startActivity(intent);
                 break;
             default:
                 break;
         }
     }
+
 }

@@ -12,7 +12,7 @@ public class FrameChannel {
         nativeHandle = new NativeHandle();
     }
 
-    public void init(int width, int height, int pix_fmt, int fps, int bitrate) {
+    public void init(int width, int height, int pix_fmt, int fps, int bitrate, String rtmpPushUrl) {
         System.out.printf("Init:\n" +
                 "\twidth:\t%d\n" +
                 "\theight:\t%d\n" +
@@ -22,16 +22,16 @@ public class FrameChannel {
                 width, height, pix_fmt, fps, bitrate);
         int res = nativeHandle.initVideoChannel(width, height, fps, bitrate);
         System.out.printf("initVideoChannel res: %d\n", res);
-        res = nativeHandle.setRtmpPushPath("rtmp://192.168.43.59:50051/hls/test");
+        res = nativeHandle.setRtmpPushPath(rtmpPushUrl);
         System.out.printf("setRtmpPushPath res: %d\n", res);
         res = nativeHandle.startPush();
         System.out.printf("startPush res: %d\n", res);
     }
 
     public void receive(byte [] data) {
-        System.out.printf("data length: %d\n", data.length);
+//        System.out.printf("data length: %d\n", data.length);
         int res = nativeHandle.encodeOneFrame(data);
-        System.out.printf("receive res: %d\n", res);
+//        System.out.printf("receive res: %d\n", res);
     }
 
     public void release() {
