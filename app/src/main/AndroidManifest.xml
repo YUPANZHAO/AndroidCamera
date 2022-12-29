@@ -15,7 +15,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidCamera">
-        <activity android:name=".SurveillanceActivity"></activity>
+        <activity android:name=".SurveillanceActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"></activity>
         <activity android:name=".SettingActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

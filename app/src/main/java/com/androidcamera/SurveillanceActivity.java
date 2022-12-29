@@ -33,7 +33,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_surveillance);
-
+        System.out.printf("on Create");
         init();
         flushVideoInfo();
         // 延迟开机，等待Activity渲染完成
@@ -41,7 +41,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
             @Override
             public void run() {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
