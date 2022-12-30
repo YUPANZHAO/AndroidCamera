@@ -47,6 +47,30 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPush
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeOneFrame
   (JNIEnv *, jobject, jbyteArray);
 
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    setAudioEncodeParams
+ * Signature: (II)I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_setAudioEncodeParams
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    getInputSamples
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_getInputSamples
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    encodeAudioData
+ * Signature: ([B)I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeAudioData
+  (JNIEnv *, jobject, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

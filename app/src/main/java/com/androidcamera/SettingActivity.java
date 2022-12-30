@@ -14,7 +14,8 @@ public class SettingActivity extends AppCompatActivity {
     private EditText et_height;
     private EditText et_fps;
     private EditText et_bitrate;
-
+    private EditText et_sampleRateInHz;
+    private EditText et_channelCfg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,12 +37,16 @@ public class SettingActivity extends AppCompatActivity {
         et_height = findViewById(R.id.setting_et_height);
         et_fps = findViewById(R.id.setting_et_fps);
         et_bitrate = findViewById(R.id.setting_et_bitrate);
+        et_sampleRateInHz = findViewById(R.id.setting_et_sampleRateInHz);
+        et_channelCfg = findViewById(R.id.setting_et_channelcfg);
         // init value
         et_rtmpPushUrl.setText(GlobalInfo.rtmpPushUrl);
         et_width.setText(String.valueOf(GlobalInfo.width));
         et_height.setText(String.valueOf(GlobalInfo.height));
         et_fps.setText(String.valueOf(GlobalInfo.fps));
         et_bitrate.setText(String.valueOf(GlobalInfo.bitrate));
+        et_sampleRateInHz.setText(String.valueOf(GlobalInfo.sampleRateInHz));
+        et_channelCfg.setText(String.valueOf(GlobalInfo.channelCfg));
     }
 
     @Override
@@ -52,6 +57,8 @@ public class SettingActivity extends AppCompatActivity {
         GlobalInfo.height = Integer.valueOf(et_height.getText().toString());
         GlobalInfo.fps = Integer.valueOf(et_fps.getText().toString());
         GlobalInfo.bitrate = Integer.valueOf(et_bitrate.getText().toString());
+        GlobalInfo.sampleRateInHz = Integer.valueOf(et_sampleRateInHz.getText().toString());
+        GlobalInfo.channelCfg = Integer.valueOf(et_channelCfg.getText().toString());
     }
 
 }

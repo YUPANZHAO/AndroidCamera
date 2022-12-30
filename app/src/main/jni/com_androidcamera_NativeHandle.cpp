@@ -3,6 +3,7 @@
 #include "VideoChannel.h"
 #include <thread>
 #include <android/log.h>
+#include "AudioChannel.h"
 
 // 视频参数
 int _width;
@@ -16,6 +17,9 @@ SafeQueue<RTMPPacket*> packets;
 // 视频编码通道
 VideoChannel* video_channel = nullptr;
 
+// 音频编码通道
+AudioChannel* audio_channel = nullptr;
+
 // 开始推流的时间戳
 uint32_t push_start_time = 0;
 
@@ -24,6 +28,14 @@ string rtmp_push_path;
 
 // 是否在推流
 bool is_push_stream = 0;
+
+auto RTMPPacketPackUpCallBack = [](RTMPPacket* packet) {
+    if(packet) {
+        // 将编码后的RTMP包塞入缓冲队列，等待推送
+        packet->m_nTimeStamp = RTMP_GetTime() - push_start_time;
+        packets.push(packet);
+    }
+};
 
 extern "C"
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_initVideoChannel
@@ -38,16 +50,14 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_initVideoChannel
         delete video_channel;
         video_channel = nullptr;
     } 
+    if(audio_channel) {
+        delete audio_channel;
+        audio_channel = nullptr;
+    }
     // 创建新的编码通道
     video_channel = new VideoChannel;
     video_channel->setVideoEncoderParams(_width, _height, _fps, _bitrate);
-    video_channel->setRTMPPacketCallBack([&](RTMPPacket* packet) {
-        if(packet) {
-            // 将编码后的RTMP包塞入缓冲队列，等待推送
-            packet->m_nTimeStamp = RTMP_GetTime() - push_start_time;
-            packets.push(packet);
-        }
-    });
+    video_channel->setRTMPPacketCallBack(RTMPPacketPackUpCallBack); 
     return 0;
 }
 
@@ -113,6 +123,10 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_startPush
 
             is_push_stream = true;
 
+            if(audio_channel) {
+                RTMPPacketPackUpCallBack(audio_channel->getAudioDecodeInfo());
+            }
+
             __android_log_print(ANDROID_LOG_INFO, "RTMP", "开始推流");
             while(is_push_stream) {
                 packets.pop(packet);
@@ -163,6 +177,10 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPush
         delete video_channel;
         video_channel = nullptr;
     }
+    if(audio_channel) {
+        delete audio_channel;
+        audio_channel = nullptr;
+    }
     // 关闭推流线程
     is_push_stream = false;
     packets.setWork(0);
@@ -180,6 +198,40 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeOneFrame
     jbyte* data = env->GetByteArrayElements(buffer, NULL);
     // 编码一帧数据
     video_channel->encodeData((uint8_t*)data);
+    env->ReleaseByteArrayElements(buffer, data, 0);
+
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_setAudioEncodeParams
+(JNIEnv *env, jobject obj, jint sampleRateInHz, jint channelCfg) {
+    // 创建音频通道
+    audio_channel = new AudioChannel;
+    audio_channel->setRTMPPacketCallBack(RTMPPacketPackUpCallBack);
+    // 设置音频编码参数
+    audio_channel->setAudioEncodeParams(sampleRateInHz, channelCfg);
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_getInputSamples
+(JNIEnv *env, jobject obj) {
+    if(audio_channel) {
+        return audio_channel->getInputSamples();
+    }
+    return -1;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeAudioData
+(JNIEnv *env, jobject obj, jbyteArray buffer) {
+    // 未开启推流或编码通道未初始化
+    if(!is_push_stream || !audio_channel) return -1;
+    
+    jbyte* data = env->GetByteArrayElements(buffer, NULL);
+    // 编码音频数据
+    audio_channel->encodeAudioData((uint8_t*)data);
     env->ReleaseByteArrayElements(buffer, data, 0);
 
     return 0;

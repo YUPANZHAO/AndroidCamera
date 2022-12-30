@@ -38,4 +38,25 @@ public class NativeHandle {
      */
     public native int encodeOneFrame(byte [] data);
 
+    /**
+     * 设置音频参数
+     * @param sampleRateInHz 采样率
+     * @param channelCfg    1 单声道 2 立体声
+     * @return              状态码 0 成功 其他值 失败
+     */
+    public native int setAudioEncodeParams(int sampleRateInHz, int channelCfg);
+
+    /**
+     * 获取音频采样输入个数
+     * @return 采样个数，用于指导 AudioRecord 每次读取多少字节数据，一个采样两个字节
+     */
+    public native int getInputSamples();
+
+    /**
+     * 编码音频数据
+     * @param data  数据
+     * @return      状态码 0 成功 其他值 失败
+     */
+    public native int encodeAudioData(byte [] data);
+
 }

@@ -88,4 +88,39 @@
             android:textSize="40px" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="音频采样率:"
+            android:textSize="40px" />
+        <EditText
+            android:id="@+id/setting_et_sampleRateInHz"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:textSize="40px" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="音频类型:"
+            android:textSize="40px" />
+        <EditText
+            android:id="@+id/setting_et_channelcfg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="1:单声道 2:立体声"
+            android:textSize="40px" />
+    </LinearLayout>
+
 </LinearLayout>
