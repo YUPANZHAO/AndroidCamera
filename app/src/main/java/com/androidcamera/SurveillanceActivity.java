@@ -241,7 +241,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         int maxBufferSize = inputBytesCount > minBufferSize ? inputBytesCount : minBufferSize;
 
         audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.MIC,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 GlobalInfo.sampleRateInHz,
                 (GlobalInfo.channelCfg == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO),
                 AudioFormat.ENCODING_PCM_16BIT,
