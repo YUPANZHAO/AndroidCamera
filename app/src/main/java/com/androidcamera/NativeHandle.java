@@ -59,4 +59,30 @@ public class NativeHandle {
      */
     public native int encodeAudioData(byte [] data);
 
+    /**
+     * 视频帧回调
+     */
+    public interface OnVideoListener {
+        public int receiveOneFrame(byte [] data, int width, int height, int pix_fmt);
+    }
+
+    /**
+     * 音频帧回调
+     */
+    public interface OnAudioListener {
+        public int receiveOneFrame(byte [] data, int sampleRate, int channels);
+    }
+
+    /**
+     * 拉流
+     * @param rtmpUrl 流地址
+     * @return        状态码 0 成功 其他值 失败
+     */
+    public native int pullStream(String rtmpUrl, OnVideoListener videoListener, OnAudioListener audioListener);
+
+    /**
+     * 停止拉流
+     * @return 状态码 0 成功 其他值 失败
+     */
+    public native int stopPullStream();
 }

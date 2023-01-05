@@ -1,5 +1,13 @@
 package com.androidcamera;
 
+import android.accounts.OnAccountsUpdateListener;
+
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+
 public class DataChannel {
 
     static {
@@ -30,6 +38,20 @@ public class DataChannel {
         System.out.printf("setRtmpPushPath res: %d\n", res);
         res = nativeHandle.startPush();
         System.out.printf("startPush res: %d\n", res);
+
+        nativeHandle.pullStream("rtmp://172.16.36.193:50051/hls/test", new NativeHandle.OnVideoListener() {
+            @Override
+            public int receiveOneFrame(byte[] data, int width, int height, int pix_fmt) {
+                System.out.printf("video callback: %d %d %d %d\n", data.length, width, height, pix_fmt);
+                return 0;
+            }
+        }, new NativeHandle.OnAudioListener() {
+            @Override
+            public int receiveOneFrame(byte[] data, int sampleRate, int channels) {
+                System.out.printf("audio callback: %d %d %d\n", data.length, sampleRate, channels);
+                return 0;
+            }
+        });
     }
 
     public void receiveVideoData(byte [] data) {
@@ -46,6 +68,8 @@ public class DataChannel {
 
     public void release() {
         int res = nativeHandle.stopPush();
+        System.out.printf("release res: %d\n", res);
+        res = nativeHandle.stopPullStream();
         System.out.printf("release res: %d\n", res);
     }
 

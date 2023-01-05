@@ -4,6 +4,10 @@
 #include <thread>
 #include <android/log.h>
 #include "AudioChannel.h"
+#include <unistd.h>
+#include "VideoCapture.h"
+#include "H264Decoder.h"
+#include "AACDecoder.h"
 
 // 视频参数
 int _width;
@@ -234,5 +238,197 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeAudioData
     audio_channel->encodeAudioData((uint8_t*)data);
     env->ReleaseByteArrayElements(buffer, data, 0);
 
+    return 0;
+}
+
+//========================== 拉流流程 ============================
+
+JavaVM* g_VM = nullptr;
+bool m_NeedDetach = false;
+
+VideoCapture* video_capture = nullptr;
+H264Decoder* video_decoder = nullptr;
+AACDecoder* audio_decoder = nullptr;
+
+string rtmp_pull_url;
+
+BYTE adts_header[7];
+
+bool is_pulling = false;
+
+JNIEnv* env;
+jobject videoObject;
+jobject audioObject;
+jclass videoClass;
+jclass audioClass;
+jmethodID videoCBId;
+jmethodID audioCBId;
+jbyteArray video_buffer;
+jbyteArray audio_buffer;
+jbyte* video_data;
+jbyte* audio_data;
+
+void stop_pull_stream() {
+    is_pulling = false;
+    video_capture->stop();
+}
+
+void thread_task() {
+    __android_log_print(ANDROID_LOG_INFO, "RTMP", "开启拉流线程");
+    // 初始化
+    video_capture = new VideoCapture;
+    video_decoder = new H264Decoder;
+    audio_decoder = new AACDecoder;
+    // 获取Nalu，交给H264解码器
+    video_capture->setNaluCB([&](NALU_TYPE type, BYTE* data, UINT32 len) {
+        if(type == NALU_TYPE_IDR) {
+            BYTE nalu_header [] = { 0x00, 0x00, 0x01 };
+            video_decoder->receiveData(nalu_header, 3);
+        }else {
+            BYTE nalu_header [] = { 0x00, 0x00, 0x00, 0x01 };
+            video_decoder->receiveData(nalu_header, 4);
+        }
+        video_decoder->receiveData(data, len);
+    });
+    // 获取AAC，交给AAC解码器
+    video_capture->setAudioCB([&](AUDIO_TYPE type, AUDIO_CHANNEL_TYPE channelCfg, BYTE* data, UINT32 len) {
+        __android_log_print(ANDROID_LOG_INFO, "RTMP", "audio type: %d, data len: %d", type, len);
+        if(type == AUDIO_INFO) {
+            UINT32 num0 = data[0] & 0x7;
+            UINT32 num1 = data[1] & 0x80;
+            UINT32 sampleIdx = ((num0 << 1) | (num1 >> 7));
+            UINT32 channelsIdx = ((data[1] & 0x78) >> 3);
+            BYTE temp [] = { 0xFF, 0xF1, 0x40, 0x00, 0x00, 0x1F, 0xFC };
+            temp[2] |= (sampleIdx << 2) & 0x3C;
+            temp[2] |= ((channelsIdx & 0x4) >> 2) & 0x1;
+            temp[3] |= ((channelsIdx & 0x3) << 6) & 0xC0;
+            memcpy(adts_header, temp, 7);
+        }else {
+            UINT32 all_len = 7 + len;
+            BYTE num0 = ((all_len & 0x1800) >> 11) & 0x3;
+            BYTE num1 = ((all_len & 0x7F8) >> 3) & 0xFF;
+            BYTE num2 = ((all_len & 0x7) << 5) & 0xE0;
+            adts_header[3] &= 0xFC;
+            adts_header[4] &= 0x00;
+            adts_header[5] &= 0x1F;
+            adts_header[3] |= num0;
+            adts_header[4] |= num1;
+            adts_header[5] |= num2;
+            audio_decoder->receiveData(adts_header, 7);
+            audio_decoder->receiveData(data, len);
+        }
+    });
+    // 获取到H264解码器返回的原始帧数据，提交至JAVA层
+    video_decoder->setFrameCallBack([&](BYTE* data, UINT32 len, UINT32 width, UINT32 height, AVPixelFormat pix_fmt) {
+        if(!video_buffer) video_buffer = env->NewByteArray(len);
+        video_data = env->GetByteArrayElements(video_buffer, NULL);
+        memcpy(video_data, data, len);
+        env->ReleaseByteArrayElements(video_buffer, video_data, 0);
+        env->CallIntMethod(videoObject, videoCBId, video_buffer, width, height, pix_fmt);
+    });
+    // 获取到AAC解码器返回的原始数据，提交至JAVA层
+    audio_decoder->setPCMCallBack([&](BYTE* data, UINT32 len, UINT32 sampleRate, UINT32 channels) {
+        if(!audio_buffer) audio_buffer = env->NewByteArray(len);
+        audio_data = env->GetByteArrayElements(audio_buffer, NULL); 
+        memcpy(audio_data, data, len);
+        env->ReleaseByteArrayElements(audio_buffer, audio_data, 0);
+        env->CallIntMethod(audioObject, audioCBId, audio_buffer, sampleRate, channels);
+    });
+    // 开启拉流线程
+    video_capture->setRtmpURL(rtmp_pull_url);
+    video_capture->start(); 
+    __android_log_print(ANDROID_LOG_INFO, "RTMP", "拉流线程结束");
+    stop_pull_stream();
+    // 释放资源
+    if(video_capture) {
+        video_capture->stop();
+        delete video_capture;
+        video_capture = nullptr;
+    }
+    if(video_decoder) {
+        delete video_decoder;
+        video_decoder = nullptr;
+    }
+    if(audio_decoder) {
+        delete audio_decoder;
+        audio_decoder = nullptr;
+    }
+    // 释放缓冲区
+    if(video_buffer) {
+        env->DeleteLocalRef(video_buffer);
+        video_buffer = nullptr;
+    }
+    if(audio_buffer) {
+        env->DeleteLocalRef(audio_buffer);
+        audio_buffer = nullptr;
+    }
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
+(JNIEnv *envv, jobject obj, jstring rtmpUrl, jobject videoListener, jobject audioListner) {
+    if(is_pulling) return -1;
+    is_pulling = true;
+    
+    // 保存拉流地址
+    const char *url = envv->GetStringUTFChars(rtmpUrl, NULL);
+    rtmp_pull_url = string(url);
+    envv->ReleaseStringUTFChars(rtmpUrl, url);
+    // 获取javaVM，以便线程中获取env
+    envv->GetJavaVM(&g_VM);
+    // 生成对象的全局应用
+    videoObject = envv->NewGlobalRef(videoListener);
+    audioObject = envv->NewGlobalRef(audioListner);
+    //  创建线程
+    std::thread pullStream([&]() {
+        // 获取当前native线程是否有没有被附加到jvm环境中
+        int getEnvStat = g_VM->GetEnv((void**)&env, JNI_VERSION_1_6);
+        if(getEnvStat == JNI_EDETACHED) {
+            // 如果没有， 主动附加到jvm环境中，获取到env
+            if(g_VM->AttachCurrentThread(&env, NULL) != 0) {
+                is_pulling = false;
+                return;
+            }
+            m_NeedDetach = true;
+        }
+        // 获取到要回调的类
+        videoClass = env->GetObjectClass(videoObject);
+        audioClass = env->GetObjectClass(audioObject);
+        if(videoClass == 0 || audioClass == 0) {
+            __android_log_print(ANDROID_LOG_INFO, "RTMP", "Unable to find class");
+            g_VM->DetachCurrentThread();
+            is_pulling = false;
+            return;
+        }
+        // 获取要回调的方法ID
+        videoCBId = env->GetMethodID(videoClass, "receiveOneFrame", "([BIII)I");
+        audioCBId = env->GetMethodID(audioClass, "receiveOneFrame", "([BII)I");
+        if(videoCBId == NULL || audioCBId == NULL) {
+            __android_log_print(ANDROID_LOG_INFO, "RTMP", "Unable to find method id");
+            is_pulling = false;
+            return;
+        }
+        // 线程任务
+        thread_task();
+        //释放当前线程
+        if(m_NeedDetach) {
+            g_VM->DetachCurrentThread();
+            m_NeedDetach = false;
+        }
+        //释放你的全局引用的接口，生命周期自己把控
+        env->DeleteGlobalRef(videoObject);
+        env->DeleteGlobalRef(audioObject);
+        env = nullptr;
+    });
+    // 线程分离
+    pullStream.detach();
+    // 设定了返回值一定要返回，否则会产生SIGSEGV信号
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPullStream
+(JNIEnv *env, jobject obj) {
+    stop_pull_stream();
     return 0;
 }

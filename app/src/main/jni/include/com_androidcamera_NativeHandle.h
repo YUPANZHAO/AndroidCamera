@@ -71,6 +71,22 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_getInputSamples
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_encodeAudioData
   (JNIEnv *, jobject, jbyteArray);
 
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    pullStream
+ * Signature: (Ljava/lang/String;Lcom/androidcamera/NativeHandle/OnVideoListener;Lcom/androidcamera/NativeHandle/OnAudioListener;)I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
+  (JNIEnv *, jobject, jstring, jobject, jobject);
+
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    stopPullStream
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPullStream
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
