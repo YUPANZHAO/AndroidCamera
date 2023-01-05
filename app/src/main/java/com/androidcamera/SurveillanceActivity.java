@@ -1,5 +1,7 @@
 package com.androidcamera;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -10,9 +12,14 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -23,8 +30,11 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +54,8 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     private int inputBytesCount;
     private boolean is_pushing_audio;
 
+    private AudioTrack audioTrack;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +73,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 }
                 openCamera();
                 openAudioRecord();
+                playRtmp();
             }
         }).start();
     }
@@ -110,6 +123,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         System.out.printf("安全退出\n");
         releaseCamera(camera);
         releaseAudioRecord();
+        releasePullThread();
     }
 
     @Override
@@ -216,6 +230,14 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         }
     }
 
+    private void releasePullThread() {
+        if (audioTrack != null) {
+            audioTrack.stop();
+            audioTrack.release();
+            audioTrack = null;
+        }
+    }
+
     private void flushVideoInfo() {
         String info = "RTMP推流地址: " + GlobalInfo.rtmpPushUrl + "\n"
                 + "分辨率: " + String.valueOf(GlobalInfo.width) + "x" + String.valueOf(GlobalInfo.height) + "\n"
@@ -267,4 +289,43 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         });
     }
 
+    private void playRtmp() {
+        dataChannel.pullStream("rtmp://192.168.43.59:50051/hls/test", new NativeHandle.OnVideoListener() {
+            @Override
+            public int receiveOneFrame(byte[] data, int width, int height, int pix_fmt) {
+                System.out.printf("video callback: %d %d %d %d\n", data.length, width, height, pix_fmt);
+                return 0;
+            }
+        }, new NativeHandle.OnAudioListener() {
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public int receiveOneFrame(byte[] data, int sampleRate, int channels) {
+                System.out.printf("audio callback: %d %d %d\n", data.length, sampleRate, channels);
+                if(audioTrack == null) {
+                    int buffsize = AudioTrack.getMinBufferSize(sampleRate,
+                            (channels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO),
+                            AudioFormat.ENCODING_PCM_16BIT);
+                    System.out.printf("audio buffsize: %d\n", buffsize);
+
+                    AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build();
+                    AudioFormat audioFormat = new AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(sampleRate)
+                            .build();
+                    audioTrack = new AudioTrack(audioAttributes, audioFormat, buffsize,
+                            AudioTrack.MODE_STREAM, AudioManager.AUDIO_SESSION_ID_GENERATE);
+
+                    System.out.printf("audioTrack state: %d\n", audioRecord.getState());
+                    if(audioRecord.getState() != AudioRecord.STATE_UNINITIALIZED)
+                        audioTrack.play();
+                }
+                int ret = audioTrack.write(data, 0, data.length);
+                System.out.printf("audio write ret: %d\n", ret);
+                return 0;
+            }
+        });
+    }
 }

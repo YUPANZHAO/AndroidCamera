@@ -11,7 +11,7 @@ public class GlobalInfo {
     // 比特率
     static int bitrate = 4000000;
     // RTMP推流地址
-    static String rtmpPushUrl = "rtmp://172.16.36.193:50051/hls/test1";
+    static String rtmpPushUrl = "rtmp://192.168.43.59:50051/hls/test1";
     // 音频采样率
     static int sampleRateInHz = 44100;
     // 音频类型 1: 单声道 2: 立体声

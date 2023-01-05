@@ -6,6 +6,11 @@
 #include <functional>
 #include "FFmpeg_Decoder.h"
 
+extern "C" {
+    #include "libswresample/swresample.h"
+    #include "libswscale/swscale.h"
+}
+
 using namespace ZYP;
 using namespace std;
 
@@ -13,7 +18,7 @@ class AACDecoder : public FFmpeg_Decoder {
 
     using PCMCallBack = function<void(BYTE*,UINT32,UINT32,UINT32)>;
 
-    static const int MAX_BUF_SIZE = 8200;
+    static const int MAX_BUF_SIZE = 10240;
 
 public:
     AACDecoder();
@@ -29,6 +34,7 @@ private:
     PCMCallBack pcmCallBack;
     BYTE* buf;
 
+    SwrContext* swrCtx;
 };
 
 #endif // AACDECODER_H
