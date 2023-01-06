@@ -65,7 +65,7 @@ LOCAL_SRC_FILES := com_androidcamera_NativeHandle.cpp \
 					VideoCapture.cpp
 LOCAL_CONLYFLAGS := -std=c11
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
-LOCAL_LDLIBS := -llog -lz
+LOCAL_LDLIBS := -llog -lz -landroid
 LOCAL_STATIC_LIBRARIES := rtmp x264 faac
 LOCAL_SHARED_LIBRARIES := avformat avcodec avutil avdevice avfilter swresample swscale
 include $(BUILD_SHARED_LIBRARY)

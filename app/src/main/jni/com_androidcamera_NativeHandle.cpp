@@ -8,6 +8,7 @@
 #include "VideoCapture.h"
 #include "H264Decoder.h"
 #include "AACDecoder.h"
+#include <android/native_window_jni.h>
 
 // 视频参数
 int _width;
@@ -254,6 +255,8 @@ string rtmp_pull_url;
 
 BYTE adts_header[7];
 
+const int MAX_VIDEO_BUF = 1024 * 1024 * 2;
+
 bool is_pulling = false;
 
 JNIEnv* env;
@@ -263,10 +266,13 @@ jclass videoClass;
 jclass audioClass;
 jmethodID videoCBId;
 jmethodID audioCBId;
-jbyteArray video_buffer;
-jbyteArray audio_buffer;
+jbyteArray video_buffer = nullptr;
+jbyteArray audio_buffer = nullptr;
 jbyte* video_data;
 jbyte* audio_data;
+
+ANativeWindow* native_window = nullptr;
+ANativeWindow_Buffer out_buffer;
 
 void stop_pull_stream() {
     is_pulling = false;
@@ -279,8 +285,9 @@ void thread_task() {
     video_capture = new VideoCapture;
     video_decoder = new H264Decoder;
     audio_decoder = new AACDecoder;
-    // 获取Nalu，交给H264解码器
+    // 获取H264，交由解码器
     video_capture->setNaluCB([&](NALU_TYPE type, BYTE* data, UINT32 len) {
+        __android_log_print(ANDROID_LOG_INFO, "RTMP", "video type: %d, data len: %d", type, len);
         if(type == NALU_TYPE_IDR) {
             BYTE nalu_header [] = { 0x00, 0x00, 0x01 };
             video_decoder->receiveData(nalu_header, 3);
@@ -318,13 +325,20 @@ void thread_task() {
             audio_decoder->receiveData(data, len);
         }
     });
-    // 获取到H264解码器返回的原始帧数据，提交至JAVA层
+    // 获取到H264解码器返回的原始帧数据，
+    ANativeWindow_acquire(native_window);
     video_decoder->setFrameCallBack([&](BYTE* data, UINT32 len, UINT32 width, UINT32 height, AVPixelFormat pix_fmt) {
-        if(!video_buffer) video_buffer = env->NewByteArray(len);
-        video_data = env->GetByteArrayElements(video_buffer, NULL);
-        memcpy(video_data, data, len);
-        env->ReleaseByteArrayElements(video_buffer, video_data, 0);
-        env->CallIntMethod(videoObject, videoCBId, video_buffer, width, height, pix_fmt);
+        __android_log_print(ANDROID_LOG_INFO, "RTMP", "get RGBA frame data len: %d\n", len);
+        // 渲染RGBA
+        ANativeWindow_setBuffersGeometry(native_window, width, height, WINDOW_FORMAT_RGBA_8888);
+        int ret = ANativeWindow_lock(native_window, &out_buffer, NULL);
+        __android_log_print(ANDROID_LOG_INFO, "RTMP", "ANativeWindow_lock ret: %d\n", ret);
+        int oneLineBytes = (out_buffer.stride << 2);
+        int srcStride = len;
+        for(int i=0; i < height; ++i) {
+            memcpy((BYTE*)out_buffer.bits + i * oneLineBytes, data + i * srcStride, srcStride);
+        }
+        ANativeWindow_unlockAndPost(native_window);
     });
     // 获取到AAC解码器返回的原始数据，提交至JAVA层
     audio_decoder->setPCMCallBack([&](BYTE* data, UINT32 len, UINT32 sampleRate, UINT32 channels) {
@@ -362,11 +376,15 @@ void thread_task() {
         env->DeleteLocalRef(audio_buffer);
         audio_buffer = nullptr;
     }
+    if(native_window) {
+        ANativeWindow_release(native_window);
+        native_window = nullptr;
+    }
 }
 
 extern "C"
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
-(JNIEnv *envv, jobject obj, jstring rtmpUrl, jobject videoListener, jobject audioListner) {
+(JNIEnv *envv, jobject obj, jstring rtmpUrl, jobject surface, jobject audioListner) {
     if(is_pulling) return -1;
     is_pulling = true;
     
@@ -377,8 +395,10 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
     // 获取javaVM，以便线程中获取env
     envv->GetJavaVM(&g_VM);
     // 生成对象的全局应用
-    videoObject = envv->NewGlobalRef(videoListener);
+    videoObject = envv->NewGlobalRef(surface);
     audioObject = envv->NewGlobalRef(audioListner);
+    // 获取native_windows
+    native_window = ANativeWindow_fromSurface(envv, surface);
     //  创建线程
     std::thread pullStream([&]() {
         // 获取当前native线程是否有没有被附加到jvm环境中
@@ -392,18 +412,16 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
             m_NeedDetach = true;
         }
         // 获取到要回调的类
-        videoClass = env->GetObjectClass(videoObject);
         audioClass = env->GetObjectClass(audioObject);
-        if(videoClass == 0 || audioClass == 0) {
+        if(audioClass == 0) {
             __android_log_print(ANDROID_LOG_INFO, "RTMP", "Unable to find class");
             g_VM->DetachCurrentThread();
             is_pulling = false;
             return;
         }
         // 获取要回调的方法ID
-        videoCBId = env->GetMethodID(videoClass, "receiveOneFrame", "([BIII)I");
         audioCBId = env->GetMethodID(audioClass, "receiveOneFrame", "([BII)I");
-        if(videoCBId == NULL || audioCBId == NULL) {
+        if(audioCBId == NULL) {
             __android_log_print(ANDROID_LOG_INFO, "RTMP", "Unable to find method id");
             is_pulling = false;
             return;

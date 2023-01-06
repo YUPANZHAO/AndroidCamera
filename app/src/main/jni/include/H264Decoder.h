@@ -5,6 +5,12 @@
 #include <functional>
 #include "FFmpeg_Decoder.h"
 
+extern "C" {
+    #include "libswresample/swresample.h"
+    #include "libswscale/swscale.h"
+    #include "libavutil/imgutils.h"
+}
+
 using namespace std;
 using namespace ZYP;
 
@@ -29,6 +35,8 @@ private:
     FrameCallBack frameCallBack;
     BYTE* buf;
 
+    SwsContext* swsCtx;
+    AVFrame* outFrame;
 };
 
 #endif // H264DECODER_H

@@ -44,10 +44,10 @@
             android:layout_margin="30px" />
     </RelativeLayout>
 
-    <VideoView
-        android:id="@+id/surveillance_videoView"
-        android:layout_width="240dp"
-        android:layout_height="135dp"
+    <SurfaceView
+        android:id="@+id/surveillance_sfv_pull"
+        android:layout_width="640px"
+        android:layout_height="360px"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:layout_marginTop="50px"

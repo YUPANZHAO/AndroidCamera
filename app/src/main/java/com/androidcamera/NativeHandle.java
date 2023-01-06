@@ -1,5 +1,7 @@
 package com.androidcamera;
 
+import android.view.Surface;
+
 public class NativeHandle {
 
     /**
@@ -60,10 +62,10 @@ public class NativeHandle {
     public native int encodeAudioData(byte [] data);
 
     /**
-     * 视频帧回调
+     * 视频H264回调
      */
     public interface OnVideoListener {
-        public int receiveOneFrame(byte [] data, int width, int height, int pix_fmt);
+        public int receiveOneFrame(byte [] data, int len);
     }
 
     /**
@@ -75,10 +77,10 @@ public class NativeHandle {
 
     /**
      * 拉流
-     * @param rtmpUrl 流地址
-     * @return        状态码 0 成功 其他值 失败
+     * @param rtmpUrl   流地址
+     * @return          状态码 0 成功 其他值 失败
      */
-    public native int pullStream(String rtmpUrl, OnVideoListener videoListener, OnAudioListener audioListener);
+    public native int pullStream(String rtmpUrl, Surface surface, OnAudioListener audioListener);
 
     /**
      * 停止拉流

@@ -2,6 +2,7 @@ package com.androidcamera;
 
 import android.accounts.OnAccountsUpdateListener;
 import android.media.AudioTrack;
+import android.view.Surface;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
@@ -64,8 +65,8 @@ public class DataChannel {
         return nativeHandle.getInputSamples();
     }
 
-    public int pullStream(String rtmpUrl, NativeHandle.OnVideoListener videoListener, NativeHandle.OnAudioListener audioListener) {
-        return nativeHandle.pullStream(rtmpUrl, videoListener, audioListener);
+    public int pullStream(String rtmpUrl, Surface surface, NativeHandle.OnAudioListener audioListener) {
+        return nativeHandle.pullStream(rtmpUrl, surface, audioListener);
     }
 
     public int stopPullStream() {

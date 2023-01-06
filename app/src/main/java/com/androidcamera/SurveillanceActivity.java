@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -55,6 +56,8 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     private boolean is_pushing_audio;
 
     private AudioTrack audioTrack;
+    private SurfaceView sfv_videoView;
+    private SurfaceHolder sfv_videoView_holder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +107,9 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         t_videoInfo = findViewById(R.id.surveillance_t_videoInfo);
         //设置屏幕为横屏, 设置后会锁定方向
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        // sfv video
+        sfv_videoView = findViewById(R.id.surveillance_sfv_pull);
+        sfv_videoView_holder = sfv_videoView.getHolder();
     }
 
     @Override
@@ -119,11 +125,11 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         System.out.printf("安全退出\n");
         releaseCamera(camera);
         releaseAudioRecord();
         releasePullThread();
+        super.onDestroy();
     }
 
     @Override
@@ -231,6 +237,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void releasePullThread() {
+        dataChannel.stopPullStream();
         if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
@@ -290,13 +297,10 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void playRtmp() {
-        dataChannel.pullStream("rtmp://192.168.43.59:50051/hls/test", new NativeHandle.OnVideoListener() {
-            @Override
-            public int receiveOneFrame(byte[] data, int width, int height, int pix_fmt) {
-                System.out.printf("video callback: %d %d %d %d\n", data.length, width, height, pix_fmt);
-                return 0;
-            }
-        }, new NativeHandle.OnAudioListener() {
+        System.out.printf("Start Play Rtmp\n");
+        dataChannel.pullStream("rtmp://192.168.43.59:50051/hls/test",
+        sfv_videoView_holder.getSurface()
+        , new NativeHandle.OnAudioListener() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public int receiveOneFrame(byte[] data, int sampleRate, int channels) {
