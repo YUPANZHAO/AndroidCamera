@@ -57,8 +57,6 @@ public class DataChannel {
     public void release() {
         int res = nativeHandle.stopPush();
         System.out.printf("release res: %d\n", res);
-        res = nativeHandle.stopPullStream();
-        System.out.printf("release res: %d\n", res);
     }
 
     public int getInputSamplesCount() {
