@@ -16,7 +16,8 @@ public class Permission {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.MODIFY_AUDIO_SETTINGS
+            Manifest.permission.MODIFY_AUDIO_SETTINGS,
+            Manifest.permission.ACCESS_WIFI_STATE
     };
     //每个权限是否已授
     public static boolean isPermissionGranted(Activity activity){

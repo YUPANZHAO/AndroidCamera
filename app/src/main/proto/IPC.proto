@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.autoforce.mcc4s.proto";
+option java_outer_classname = "ClientIPC";
+option optimize_for = CODE_SIZE;
+
+package IPC;
+
+service IPCSrv {
+    rpc call (IPCRequest) returns (IPCReply) {}
+}
+
+message IPCRequest {
+    string body = 1;
+}
+
+message IPCReply {
+    string body = 1;
+}

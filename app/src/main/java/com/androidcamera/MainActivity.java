@@ -4,13 +4,19 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.location.SettingInjectorService;
 import android.net.IpSecManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -88,6 +94,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.main_btn_openCamera:
+                // 请求注册码以及推流地址
+                GrpcService service = new GrpcService();
+                GrpcService.KeyInfo info = service.genKey(getAndroidId(this));
+                if(info == null) {
+                    Log.i("grpc", "reply is null");
+                }
+                GlobalInfo.IdentCode = info.key;
+                GlobalInfo.rtmpPushUrl = info.rtmp_url;
+                // 开启相机推流
                 intent=new Intent(MainActivity.this, SurveillanceActivity.class);
                 startActivity(intent);
                 break;
@@ -98,6 +113,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             default:
                 break;
         }
+    }
+
+    public static String getAndroidId (Context context) {
+        String ANDROID_ID = Settings.System.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        return ANDROID_ID;
     }
 
 }

@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
+apply plugin: 'com.google.protobuf'
+
 android {
     compileSdkVersion 33
     buildToolsVersion "33.0.1"
@@ -41,6 +43,24 @@ android {
     }
 }
 
+protobuf {
+    protoc { artifact = 'com.google.protobuf:protoc:3.7.1' }
+    plugins {
+        javalite { artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0" }
+        grpc { artifact = 'io.grpc:protoc-gen-grpc-java:1.20.0' // CURRENT_GRPC_VERSION
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                javalite {}
+                grpc { // Options added to --grpc_out
+                    option 'lite' }
+            }
+        }
+    }
+}
+
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -51,4 +71,9 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'io.grpc:grpc-okhttp:1.20.0'
+    implementation 'io.grpc:grpc-protobuf-lite:1.20.0'
+    implementation 'io.grpc:grpc-stub:1.20.0'
+    implementation 'javax.annotation:javax.annotation-api:1.2'
 }

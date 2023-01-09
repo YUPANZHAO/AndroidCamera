@@ -252,7 +252,8 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 + "帧率: " + String.valueOf(GlobalInfo.fps) + "\n"
                 + "码率: " + String.valueOf(GlobalInfo.bitrate) + "\n"
                 + "音频采样率: " + String.valueOf(GlobalInfo.sampleRateInHz) + "\n"
-                + "音频类型: " + (GlobalInfo.channelCfg == 1 ? "单声道" : "立体声") + "\n";
+                + "音频类型: " + (GlobalInfo.channelCfg == 1 ? "单声道" : "立体声") + "\n"
+                + "注册码: " + GlobalInfo.IdentCode + "\n";
         t_videoInfo.setText(info);
     }
 

@@ -276,7 +276,9 @@ ANativeWindow_Buffer out_buffer;
 
 void stop_pull_stream() {
     is_pulling = false;
-    video_capture->stop();
+    if(video_capture) {
+        video_capture->stop();
+    }
 }
 
 void thread_task() {

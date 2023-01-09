@@ -17,4 +17,10 @@ public class GlobalInfo {
     // 音频类型 1: 单声道 2: 立体声
     static int channelCfg = 2;
 
+    // 注册码
+    static String IdentCode = "";
+
+    // grpc
+    static String host = "192.168.43.59";
+    static int port = 50052;
 }
