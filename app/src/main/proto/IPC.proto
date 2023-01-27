@@ -9,6 +9,7 @@ package IPC;
 
 service IPCSrv {
     rpc call (IPCRequest) returns (IPCReply) {}
+    rpc streamCall(IPCRequest) returns (stream IPCReply) {}
 }
 
 message IPCRequest {

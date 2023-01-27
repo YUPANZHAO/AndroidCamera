@@ -301,7 +301,7 @@ void thread_task() {
     });
     // 获取AAC，交给AAC解码器
     video_capture->setAudioCB([&](AUDIO_TYPE type, AUDIO_CHANNEL_TYPE channelCfg, BYTE* data, UINT32 len) {
-        __android_log_print(ANDROID_LOG_INFO, "RTMP", "audio type: %d, data len: %d", type, len);
+        __android_log_print(ANDROID_LOG_INFO, "RETURNPCM", "audio type: %d, data len: %d", type, len);
         if(type == AUDIO_INFO) {
             UINT32 num0 = data[0] & 0x7;
             UINT32 num1 = data[1] & 0x80;
@@ -344,6 +344,7 @@ void thread_task() {
     });
     // 获取到AAC解码器返回的原始数据，提交至JAVA层
     audio_decoder->setPCMCallBack([&](BYTE* data, UINT32 len, UINT32 sampleRate, UINT32 channels) {
+        __android_log_print(ANDROID_LOG_INFO, "RETURNPCM", "data len: %d, sampleRate: %d, channels: %d\n", len, sampleRate, channels);
         if(!audio_buffer) audio_buffer = env->NewByteArray(len);
         audio_data = env->GetByteArrayElements(audio_buffer, NULL); 
         memcpy(audio_data, data, len);
@@ -401,6 +402,7 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
     audioObject = envv->NewGlobalRef(audioListner);
     // 获取native_windows
     native_window = ANativeWindow_fromSurface(envv, surface);
+    __android_log_print(ANDROID_LOG_INFO, "SurfaceEnd", "Start %d", native_window);
     //  创建线程
     std::thread pullStream([&]() {
         // 获取当前native线程是否有没有被附加到jvm环境中
@@ -439,6 +441,7 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
         env->DeleteGlobalRef(videoObject);
         env->DeleteGlobalRef(audioObject);
         env = nullptr;
+        __android_log_print(ANDROID_LOG_INFO, "SurfaceEnd", "End");
     });
     // 线程分离
     pullStream.detach();

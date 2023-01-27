@@ -87,7 +87,7 @@ void FFmpeg_Decoder::receiveData(BYTE* data, UINT32 len) {
             return;
         }
 
-        data += ret;
+        parserData += ret;
         len -= ret;
 
         if(!packet->size) {

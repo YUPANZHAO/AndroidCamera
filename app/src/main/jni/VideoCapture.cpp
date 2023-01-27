@@ -88,8 +88,9 @@ void VideoCapture::pull() {
         int ret = RTMP_ReadPacket(rtmp, packet);
         __android_log_print(ANDROID_LOG_INFO, "RTMP", "read packet ret: %d", ret);
         if(ret == 0) {
-            usleep(100000);
-            continue;
+            // 若考虑网络问题造成的断流，需要修改rtmpdump库
+            // continue;
+            break;
         }else if(ret < 0) {
             break;
         }

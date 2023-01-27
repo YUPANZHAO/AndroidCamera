@@ -10,6 +10,8 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.AudioAttributes;
@@ -22,6 +24,10 @@ import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -33,6 +39,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.google.gson.JsonParser;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONStringer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -40,6 +52,10 @@ import java.sql.Time;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.annotation.security.RunAs;
+
+import io.grpc.Grpc;
 
 public class SurveillanceActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -60,6 +76,10 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     private SurfaceView sfv_videoView;
     private SurfaceHolder sfv_videoView_holder;
 
+    private Thread message_callback_listener;
+
+    private Handler mainHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,7 +97,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 }
                 openCamera();
                 openAudioRecord();
-                playRtmp();
+                listenMessageCallBack();
             }
         }).start();
     }
@@ -111,6 +131,22 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         // sfv video
         sfv_videoView = findViewById(R.id.surveillance_sfv_pull);
         sfv_videoView_holder = sfv_videoView.getHolder();
+
+        // mainHandler
+        mainHandler = new Handler(Looper.myLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                super.handleMessage(msg);
+                Log.i("HandleMsg", String.valueOf(msg.what));
+                if(msg.what == 1) {
+                    sfv_videoView.setVisibility(View.GONE);
+                    sfv_videoView.invalidate();
+                } else if(msg.what == 2) {
+                    sfv_videoView.setVisibility(View.VISIBLE);
+                    sfv_videoView.invalidate();
+                }
+            }
+        };
     }
 
     @Override
@@ -130,6 +166,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         releaseCamera(camera);
         releaseAudioRecord();
         releasePullThread();
+        releaseMsgCBThread();
         super.onDestroy();
     }
 
@@ -239,10 +276,26 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
 
     private void releasePullThread() {
         dataChannel.stopPullStream();
+        Message msg = new Message();
+        msg.what = 1;
+        mainHandler.sendMessage(msg);
         if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
             audioTrack = null;
+        }
+    }
+
+    private void releaseMsgCBThread() {
+        GrpcService grpcService = new GrpcService();
+        grpcService.deviceQuit();
+        grpcService.shutdown();
+        try {
+            Log.i("StreamMsg", "start join");
+            message_callback_listener.join();
+            Log.i("StreamMsg", "end join");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -298,9 +351,17 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         });
     }
 
-    private void playRtmp() {
+    private void playRtmp(String rtmp_url) {
         System.out.printf("Start Play Rtmp\n");
-        dataChannel.pullStream("rtmp://192.168.43.59:50051/hls/test",
+        Message msg = new Message();
+        msg.what = 2;
+        mainHandler.sendMessage(msg);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        dataChannel.pullStream(rtmp_url,
         sfv_videoView_holder.getSurface()
         , new NativeHandle.OnAudioListener() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -333,5 +394,40 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 return 0;
             }
         });
+    }
+
+    private void listenMessageCallBack() {
+        message_callback_listener = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                GrpcService grpcService = new GrpcService();
+                grpcService.streamCall(GlobalInfo.IdentCode,
+                new GrpcService.MessageCallback() {
+                    @Override
+                    public void handle(String json) {
+                        Log.i("StreamMsg", "handle json" + json);
+                        try {
+                            JSONObject object = new JSONObject(json);
+                            String oper = object.getString("operation");
+                            Log.i("StreamMsg", "oper " + oper);
+                            if(oper.equalsIgnoreCase("talkStart")) {
+                                Log.i("StreamMsg", "start");
+                                String rtmp_url = object.getString("rtmp_pull_url");
+                                Log.i("StreamMsg", "rtmp_url " + rtmp_url);
+                                playRtmp(rtmp_url);
+                            }else if(oper.equalsIgnoreCase("talkStop")) {
+                                Log.i("StreamMsg", "stop???");
+                                releasePullThread();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                });
+                grpcService.shutdown();
+            }
+        });
+        message_callback_listener.start();
     }
 }
