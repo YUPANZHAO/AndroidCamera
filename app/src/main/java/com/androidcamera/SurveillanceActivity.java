@@ -77,6 +77,8 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
     private SurfaceHolder sfv_videoView_holder;
 
     private Thread message_callback_listener;
+    private Thread send_heart_beat_thread;
+    private boolean is_sending_heart_beat;
 
     private Handler mainHandler;
 
@@ -98,6 +100,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 openCamera();
                 openAudioRecord();
                 listenMessageCallBack();
+                sendHeartBeat();
             }
         }).start();
     }
@@ -167,6 +170,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         releaseAudioRecord();
         releasePullThread();
         releaseMsgCBThread();
+        releaseHeartBeatThread();
         super.onDestroy();
     }
 
@@ -294,6 +298,15 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
             Log.i("StreamMsg", "start join");
             message_callback_listener.join();
             Log.i("StreamMsg", "end join");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void releaseHeartBeatThread() {
+        is_sending_heart_beat = false;
+        try {
+            send_heart_beat_thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -429,5 +442,25 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
             }
         });
         message_callback_listener.start();
+    }
+
+    private void sendHeartBeat() {
+        send_heart_beat_thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                is_sending_heart_beat = true;
+                while(is_sending_heart_beat) {
+                    GrpcService grpcService = new GrpcService();
+                    grpcService.heartBeat();
+                    grpcService.shutdown();
+                    Log.i("HeartBeat", "heart beat");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {}
+                }
+                Log.i("HeartBeat", "心跳线程结束");
+            }
+        });
+        send_heart_beat_thread.start();
     }
 }

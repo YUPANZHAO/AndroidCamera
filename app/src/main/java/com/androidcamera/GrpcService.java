@@ -122,4 +122,16 @@ public class GrpcService {
             e.printStackTrace();
         }
     }
+
+    public void heartBeat() {
+        try {
+            JSONObject object = new JSONObject();
+            object.put("method", "heart_beat");
+            object.put("id", GlobalInfo.IdentCode);
+
+            call(object.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
