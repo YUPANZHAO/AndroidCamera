@@ -132,6 +132,7 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_startPush
                 RTMPPacketPackUpCallBack(audio_channel->getAudioDecodeInfo());
             }
 
+            int audio_packet_count = 1;
             __android_log_print(ANDROID_LOG_INFO, "RTMP", "开始推流");
             while(is_push_stream) {
                 packets.pop(packet);
@@ -143,6 +144,13 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_startPush
                 packet->m_nInfoField2 = rtmp->m_stream_id;
                 
                 ret = RTMP_SendPacket(rtmp, packet, 1);
+                
+                if(packet->m_packetType == RTMP_PACKET_TYPE_AUDIO) {
+                    if(audio_packet_count % 10 == 0) {
+                        RTMPPacketPackUpCallBack(audio_channel->getAudioDecodeInfo());
+                    }
+                    audio_packet_count++;
+                }
 
                 if(packet) {
                     RTMPPacket_Free(packet);

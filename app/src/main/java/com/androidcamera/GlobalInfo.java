@@ -21,6 +21,6 @@ public class GlobalInfo {
     static String IdentCode = "";
 
     // grpc
-    static String host = "192.168.0.107";
-    static int port = 50052;
+    static String host = "192.168.0.130";
+    static int port = 58104;
 }
