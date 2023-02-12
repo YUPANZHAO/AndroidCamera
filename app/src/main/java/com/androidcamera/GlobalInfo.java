@@ -7,9 +7,9 @@ public class GlobalInfo {
     // 分辨率（高度）
     static int height = 360;
     // 帧率
-    static int fps = 25;
+    static int fps = 15;
     // 比特率
-    static int bitrate = 4000000;
+    static int bitrate = 400000;
     // RTMP推流地址
     static String rtmpPushUrl = "rtmp://192.168.43.59:50051/hls/test1";
     // 音频采样率
@@ -22,5 +22,5 @@ public class GlobalInfo {
 
     // grpc
     static String host = "192.168.0.130";
-    static int port = 58104;
+    static int port = 49218;
 }

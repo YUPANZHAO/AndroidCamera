@@ -22,7 +22,7 @@ void VideoChannel::setVideoEncoderParams(int width, int height, int fps, int bit
     
     x264_param_t x264_param;
     
-    x264_param_default_preset(&x264_param, "ultrafast", "zerolatency");
+    x264_param_default_preset(&x264_param, "medium", "zerolatency");
     
     x264_param.i_level_idc = 32;
     x264_param.i_csp = X264_CSP_I420;

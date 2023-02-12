@@ -145,7 +145,7 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_startPush
                 
                 ret = RTMP_SendPacket(rtmp, packet, 1);
                 
-                if(packet->m_packetType == RTMP_PACKET_TYPE_AUDIO) {
+                if(packet->m_packetType == RTMP_PACKET_TYPE_AUDIO && audio_channel) {
                     if(audio_packet_count % 10 == 0) {
                         RTMPPacketPackUpCallBack(audio_channel->getAudioDecodeInfo());
                     }

@@ -10,15 +10,19 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.Image;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -49,6 +53,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.sql.Time;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +88,9 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
 
     private Handler mainHandler;
 
+    private NV21ToBitmap nv21ToBitmap;
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,6 +114,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         }).start();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void init() {
         // 去除状态栏
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -150,6 +160,9 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 }
             }
         };
+
+        // nv21 to bitmap
+        nv21ToBitmap = new NV21ToBitmap(this);
     }
 
     @Override
@@ -235,9 +248,20 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
 
         //设置监听获取视频流的每一帧
         camera.setPreviewCallback(new Camera.PreviewCallback() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
-                dataChannel.receiveVideoData(data);
+                Bitmap bitmap = nv21ToBitmap.nv21ToBitmap(data, GlobalInfo.width, GlobalInfo.height);
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+                Date curDate = new Date(System.currentTimeMillis());
+                String str = formatter.format(curDate);
+                Bitmap ret_bitmap = ImageUtil.drawWateMaskTopLeft(SurveillanceActivity.this,
+                        bitmap, str, (int)(GlobalInfo.height * 0.05),
+                        Color.argb(100, 0, 0,0), 40, 50);
+                if(ret_bitmap == null) return;
+                byte[] ret_data = ImageUtil.getNV21FromBitmap(ret_bitmap);
+                if(ret_data == null) return;
+                dataChannel.receiveVideoData(ret_data);
             }
         });
         //调用startPreview()用以更新preview的surface
