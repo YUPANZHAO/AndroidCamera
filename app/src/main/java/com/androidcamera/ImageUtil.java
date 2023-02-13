@@ -49,6 +49,12 @@ public class ImageUtil {
         Rect rectText = new Rect();  //得到text占用宽高， 单位：像素
         paint.getTextBounds(text, 0, text.length(), rectText);
         canvas.drawText(text, left, top, paint);
+        canvas.save();
+        // 绘制黑色描边
+        paint.setColor(Color.argb(255, 0, 0, 0));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1);
+        canvas.drawText(text, left, top, paint);
         canvas.restore();
         return newBmp;
     }

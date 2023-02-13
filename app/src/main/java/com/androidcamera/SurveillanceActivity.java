@@ -256,8 +256,10 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
                 Date curDate = new Date(System.currentTimeMillis());
                 String str = formatter.format(curDate);
                 Bitmap ret_bitmap = ImageUtil.drawWateMaskTopLeft(SurveillanceActivity.this,
-                        bitmap, str, (int)(GlobalInfo.height * 0.05),
-                        Color.argb(100, 0, 0,0), 40, 50);
+                        bitmap, str, (int)(GlobalInfo.height * 0.07),
+                        Color.argb(255, 255, 255,255),
+                        (int)(GlobalInfo.width * 0.0625),
+                        (int)(GlobalInfo.height * 0.139));
                 if(ret_bitmap == null) return;
                 byte[] ret_data = ImageUtil.getNV21FromBitmap(ret_bitmap);
                 if(ret_data == null) return;
