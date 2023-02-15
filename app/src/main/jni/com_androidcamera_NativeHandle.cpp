@@ -31,6 +31,9 @@ uint32_t push_start_time = 0;
 // RTMP推流地址
 string rtmp_push_path;
 
+// 加密密钥
+string encryption;
+
 // 是否在推流
 bool is_push_stream = 0;
 
@@ -461,5 +464,18 @@ extern "C"
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPullStream
 (JNIEnv *env, jobject obj) {
     stop_pull_stream();
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_setEncryption
+(JNIEnv *env, jobject obj, jstring encryption) {
+    const char * str = env->GetStringUTFChars(encryption, 0);
+    // 记录加密密钥
+    ::encryption = string(str);
+    env->ReleaseStringUTFChars(encryption, str);
+    if(video_channel) {
+        video_channel->setEncryption(::encryption);
+    }
     return 0;
 }

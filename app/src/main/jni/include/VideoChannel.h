@@ -7,6 +7,10 @@
 #include <functional>
 #include <memory.h>
 #include <librtmp/rtmp.h>
+#include "Crypto.hpp"
+#include <string>
+
+using std::string;
 
 class VideoChannel {
     
@@ -20,6 +24,7 @@ public:
     void setVideoEncoderParams(int width, int height, int fps, int bitrate);
     void encodeData(uint8_t* data);
     void setRTMPPacketCallBack(RTMPPacketCallBack callback);
+    void setEncryption(const string & encryption);
 
 private:
     void sendSpsPpsToRtmpServer(uint8_t* sps, int sps_len, uint8_t* pps, int pps_len);
@@ -32,6 +37,7 @@ private:
     int height;
     int fps;
     int bitrate;
+    string encryption;
     
     int y_byte_count;
     int uv_byte_count; 

@@ -22,7 +22,7 @@ public class DataChannel {
         nativeHandle = new NativeHandle();
     }
 
-    public void init(int width, int height, int pix_fmt, int fps, int bitrate, String rtmpPushUrl, int sampleRateInHz, int channelCfg) {
+    public void init(int width, int height, int pix_fmt, int fps, int bitrate, String rtmpPushUrl, int sampleRateInHz, int channelCfg, String encryption) {
         System.out.printf("Init:\n" +
                 "\twidth:\t%d\n" +
                 "\theight:\t%d\n" +
@@ -38,6 +38,7 @@ public class DataChannel {
         System.out.printf("setAudioEncodeParams res: %d\n", res);
         res = nativeHandle.setRtmpPushPath(rtmpPushUrl);
         System.out.printf("setRtmpPushPath res: %d\n", res);
+        res = nativeHandle.setEncryption(encryption);
         res = nativeHandle.startPush();
         System.out.printf("startPush res: %d\n", res);
     }

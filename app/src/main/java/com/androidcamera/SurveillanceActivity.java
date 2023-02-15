@@ -214,6 +214,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         String rtmpPushUrl = GlobalInfo.rtmpPushUrl;
         int sampleRateInHz = GlobalInfo.sampleRateInHz;
         int channelCfg = GlobalInfo.channelCfg;
+        String encryption = GlobalInfo.encryption;
         //设置预览格式（也就是每一帧的视频格式）YUV420下的NV21
         parameters.setPreviewFormat(ImageFormat.NV21);
         //设置预览图像分辨率
@@ -244,7 +245,7 @@ public class SurveillanceActivity extends AppCompatActivity implements View.OnCl
         });
 
         // 注册编码器
-        dataChannel.init(width, height, ImageFormat.NV21, fps, bitrate, rtmpPushUrl, sampleRateInHz, channelCfg);
+        dataChannel.init(width, height, ImageFormat.NV21, fps, bitrate, rtmpPushUrl, sampleRateInHz, channelCfg, encryption);
 
         //设置监听获取视频流的每一帧
         camera.setPreviewCallback(new Camera.PreviewCallback() {

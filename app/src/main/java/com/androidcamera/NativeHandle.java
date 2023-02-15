@@ -87,4 +87,11 @@ public class NativeHandle {
      * @return 状态码 0 成功 其他值 失败
      */
     public native int stopPullStream();
+
+    /**
+     * 设置加密密钥
+     * @param encryption 密钥
+     * @return 状态码 0 成功 其他值 失败
+     */
+    public native int setEncryption(String encryption);
 }

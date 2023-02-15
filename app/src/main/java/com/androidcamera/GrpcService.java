@@ -59,6 +59,7 @@ public class GrpcService {
     class KeyInfo {
         public String key;
         public String rtmp_url;
+        public String encryption;
     }
 
     public KeyInfo genKey(String device_id) {
@@ -75,6 +76,7 @@ public class GrpcService {
             KeyInfo ret = new KeyInfo();
             ret.key = info.getString("key");
             ret.rtmp_url = info.getString("url");
+            ret.encryption = info.getString("encryption");
             return ret;
         } catch (JSONException e) {
             e.printStackTrace();

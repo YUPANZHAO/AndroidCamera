@@ -2,7 +2,8 @@
 
 VideoChannel::VideoChannel()
 : x264_encode_picture(nullptr),
-x264_video_codec(nullptr) {}
+x264_video_codec(nullptr),
+encryption("") {}
 
 VideoChannel::~VideoChannel() {
     if(x264_encode_picture) {
@@ -64,6 +65,10 @@ void VideoChannel::setVideoEncoderParams(int width, int height, int fps, int bit
 
 void VideoChannel::setRTMPPacketCallBack(RTMPPacketCallBack callback) {
     this->data_pack_up = callback;
+}
+
+void VideoChannel::setEncryption(const string & encryption) {
+    this->encryption = encryption;
 }
 
 void VideoChannel::encodeData(uint8_t* data) {
@@ -157,6 +162,9 @@ void VideoChannel::sendFrameToRtmpServer(int type, uint8_t* p_payload, int paylo
     rtmp_packet->m_body[0] = 0x27;
     if(type == NAL_SLICE_IDR) {
         rtmp_packet->m_body[0] = 0x17;
+        if(encryption.length()) {
+            Crypto::encrypt((const uint8_t*)encryption.data(), encryption.length(), p_payload, payload);
+        }
     }
 
     rtmp_packet->m_body[1] = 0x01;

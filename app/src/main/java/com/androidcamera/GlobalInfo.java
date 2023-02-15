@@ -22,5 +22,8 @@ public class GlobalInfo {
 
     // grpc
     static String host = "192.168.0.130";
-    static int port = 51278;
+    static int port = 51280;
+
+    // 加密密钥
+    static String encryption = "";
 }

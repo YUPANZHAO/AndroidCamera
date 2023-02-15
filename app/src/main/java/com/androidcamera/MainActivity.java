@@ -102,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 GlobalInfo.IdentCode = info.key;
                 GlobalInfo.rtmpPushUrl = info.rtmp_url;
+                GlobalInfo.encryption = info.encryption;
                 service.shutdown();
                 // 开启相机推流
                 intent=new Intent(MainActivity.this, SurveillanceActivity.class);

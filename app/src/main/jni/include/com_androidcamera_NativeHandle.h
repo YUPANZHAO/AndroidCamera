@@ -87,6 +87,14 @@ JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_pullStream
 JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_stopPullStream
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_androidcamera_NativeHandle
+ * Method:    setEncryption
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_androidcamera_NativeHandle_setEncryption
+  (JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif
